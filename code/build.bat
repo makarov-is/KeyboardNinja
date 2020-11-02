@@ -2,5 +2,5 @@
 
 IF NOT EXIST ..\build mkdir ..\build
 pushd ..\build
-cl -nologo ..\code\kninja.cpp
+cl -nologo /FC ..\code\kninja.cpp /link user32.lib
 popd
