@@ -1,8 +1,6 @@
-#include <stdio.h>
+#include <Windows.h>
 
-int main()
+int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showCmd)
 {
-	printf("test\n");
-
 	return(0);
 }
