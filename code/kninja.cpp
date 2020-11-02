@@ -6,6 +6,16 @@ LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lPara
 
 	switch(msg)
 	{
+		case WM_CLOSE:
+		{
+			DestroyWindow(window);
+		} break;
+
+		case WM_DESTROY:
+		{
+			PostQuitMessage(0);
+		} break;
+
 		default:
 		{
 			result = DefWindowProc(window, msg, wParam, lParam);
@@ -25,6 +35,17 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	windowClass.lpszClassName = windowClassName;
 
 	RegisterClass(&windowClass);
+
+	HWND window = CreateWindow(windowClassName, "KeyboardNinja", WS_OVERLAPPEDWINDOW,
+	                           CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, 0, 0, instance, 0);
+	ShowWindow(window, showCmd);
+
+	MSG msg = {};
+	while(GetMessage(&msg, 0, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
 
 	return(0);
 }
