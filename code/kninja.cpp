@@ -1,4 +1,7 @@
 #include <Windows.h>
+#include <d2d1.h>
+
+ID2D1Factory *factory;
 
 LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -6,6 +9,11 @@ LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lPara
 
 	switch(msg)
 	{
+		case WM_CREATE:
+		{
+			D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &factory);
+		} break;
+
 		case WM_CLOSE:
 		{
 			DestroyWindow(window);
