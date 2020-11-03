@@ -3,7 +3,7 @@
 
 ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
-ID2D1SolidColorBrush *backgroundBrush;
+ID2D1SolidColorBrush *brush;
 
 HRESULT initGraphicsResources(HWND window)
 {
@@ -20,12 +20,21 @@ HRESULT initGraphicsResources(HWND window)
 		                                         &renderTarget);
 		if(SUCCEEDED(result))
 		{
-			D2D1_COLOR_F backgroundColor = D2D1::ColorF(0.0f, 0.0f, 0.0f);
-			result = renderTarget->CreateSolidColorBrush(backgroundColor, &backgroundBrush);
+			D2D1_COLOR_F brushColor = D2D1::ColorF(0.0f, 0.0f, 0.0f);
+			result = renderTarget->CreateSolidColorBrush(brushColor, &brush);
 		}
 	}
 
 	return(result);
+}
+
+void onPaint()
+{
+	renderTarget->BeginDraw();
+
+	renderTarget->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f));
+
+	renderTarget->EndDraw();
 }
 
 LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -42,6 +51,7 @@ LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lPara
 		case WM_PAINT:
 		{
 			initGraphicsResources(window);
+			onPaint();
 		} break;
 
 		case WM_CLOSE:
