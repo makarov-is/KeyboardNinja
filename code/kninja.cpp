@@ -5,6 +5,8 @@ ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
 ID2D1SolidColorBrush *brush;
 
+D2D1_ROUNDED_RECT textRect;
+
 HRESULT initGraphicsResources(HWND window)
 {
 	HRESULT result = S_OK;
@@ -22,6 +24,8 @@ HRESULT initGraphicsResources(HWND window)
 		{
 			D2D1_COLOR_F brushColor = D2D1::ColorF(0.0f, 0.0f, 0.0f);
 			result = renderTarget->CreateSolidColorBrush(brushColor, &brush);
+
+			textRect = D2D1::RoundedRect(D2D1::RectF(50.0f, 20.0f, 750.0f, 320.0f), 10.0f, 10.0f);
 		}
 	}
 
@@ -32,7 +36,10 @@ void onPaint()
 {
 	renderTarget->BeginDraw();
 
-	renderTarget->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f));
+	renderTarget->Clear(D2D1::ColorF(0.33f, 0.77f, 1.0f));
+
+	brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
+	renderTarget->FillRoundedRectangle(&textRect, brush);
 
 	renderTarget->EndDraw();
 }
