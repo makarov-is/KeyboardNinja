@@ -1,11 +1,16 @@
 #include <Windows.h>
 #include <d2d1.h>
+#include <dwrite.h>
 
 ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
 ID2D1SolidColorBrush *brush;
 
 D2D1_ROUNDED_RECT textRect;
+
+IDWriteFactory *writeFactory;
+IDWriteTextFormat *textFormat;
+IDWriteTextLayout *textLayout;
 
 HRESULT initGraphicsResources(HWND window)
 {
@@ -90,6 +95,8 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	windowClass.lpszClassName = windowClassName;
 
 	RegisterClass(&windowClass);
+
+	DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown **)&writeFactory);
 
 	HWND window = CreateWindow(windowClassName, "KeyboardNinja", WS_OVERLAPPEDWINDOW,
 	                           CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, 0, 0, instance, 0);
