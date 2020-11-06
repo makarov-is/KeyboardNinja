@@ -96,11 +96,22 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 
 	RegisterClass(&windowClass);
 
-	DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown **)&writeFactory);
+	RECT desiredRect = {0};
+	desiredRect.right = 1280;
+	desiredRect.bottom = 720;
+	AdjustWindowRect(&desiredRect, WS_OVERLAPPEDWINDOW, false);
 
-	HWND window = CreateWindow(windowClassName, "KeyboardNinja", WS_OVERLAPPEDWINDOW,
-	                           CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, 0, 0, instance, 0);
+	//HWND window = CreateWindow(windowClassName, "KeyboardNinja", WS_OVERLAPPEDWINDOW,
+	                           //CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, 0, 0, instance, 0);
+	HWND window = CreateWindow(
+		windowClassName, "KeyboardNinja", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
+		desiredRect.right - desiredRect.left, 
+		desiredRect.bottom - desiredRect.top
+		, 0, 0, instance, 0
+	);
 	ShowWindow(window, showCmd);
+
+	DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown **)&writeFactory);
 
 	MSG msg = {};
 	while(GetMessage(&msg, 0, 0, 0))
