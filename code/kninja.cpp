@@ -30,7 +30,7 @@ HRESULT initGraphicsResources(HWND window)
 			D2D1_COLOR_F brushColor = D2D1::ColorF(0.0f, 0.0f, 0.0f);
 			result = renderTarget->CreateSolidColorBrush(brushColor, &brush);
 
-			textRect = D2D1::RoundedRect(D2D1::RectF(50.0f, 20.0f, 750.0f, 320.0f), 10.0f, 10.0f);
+			textRect = D2D1::RoundedRect(D2D1::RectF(190.0f, 30.0f, 1090.0f, 330.0f), 10.0f, 10.0f);
 		}
 	}
 
@@ -69,6 +69,18 @@ LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lPara
 			onPaint();
 		} break;
 
+		case WM_SIZE:
+		{
+			if(renderTarget)
+			{
+				RECT clientRect;
+				GetClientRect(window, &clientRect);
+				D2D1_SIZE_U clientRectSize = D2D1::SizeU(clientRect.right, clientRect.bottom);
+				renderTarget->Resize(clientRectSize);
+				InvalidateRect(window, 0, false);
+			}
+		} break;
+
 		case WM_CLOSE:
 		{
 			DestroyWindow(window);
@@ -104,13 +116,11 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	desiredRect.bottom = 720;
 	AdjustWindowRect(&desiredRect, WS_OVERLAPPEDWINDOW, false);
 
-	//HWND window = CreateWindow(windowClassName, "KeyboardNinja", WS_OVERLAPPEDWINDOW,
-	                           //CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, 0, 0, instance, 0);
 	HWND window = CreateWindow(
 		windowClassName, "KeyboardNinja", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
 		desiredRect.right - desiredRect.left, 
-		desiredRect.bottom - desiredRect.top
-		, 0, 0, instance, 0
+		desiredRect.bottom - desiredRect.top, 
+		0, 0, instance, 0
 	);
 	ShowWindow(window, showCmd);
 
