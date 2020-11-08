@@ -52,12 +52,15 @@ void onPaint()
 LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT result = 0;
+	HRESULT hr = 0;
 
 	switch(msg)
 	{
 		case WM_CREATE:
 		{
-			D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &factory);
+			hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &factory);
+			hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown **)&writeFactory);
+			if(hr != S_OK) return(-1);
 		} break;
 
 		case WM_PAINT:
@@ -110,8 +113,6 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 		, 0, 0, instance, 0
 	);
 	ShowWindow(window, showCmd);
-
-	DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown **)&writeFactory);
 
 	MSG msg = {};
 	while(GetMessage(&msg, 0, 0, 0))
