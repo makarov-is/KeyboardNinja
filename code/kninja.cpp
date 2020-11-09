@@ -2,6 +2,8 @@
 #include <d2d1.h>
 #include <dwrite.h>
 
+#define arrayCount(name) ((sizeof(name))/(sizeof((name)[0])))
+
 ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
 ID2D1SolidColorBrush *brush;
@@ -11,6 +13,10 @@ D2D1_ROUNDED_RECT textRect;
 IDWriteFactory *writeFactory;
 IDWriteTextFormat *textFormat;
 IDWriteTextLayout *textLayout;
+D2D1_RECT_F textLayoutRect;
+
+#define BUFFER_SIZE
+WCHAR textBuffer[BUFFER_SIZE] = L"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec bibendum vel ipsum id congue. Duis semper ex at volutpat luctus. Donec sodales placerat mi quis tempus. Proin aliquet velit eu libero vestibulum iaculis. Donec nunc nulla, commodo at ultricies id, aliquet eu odio. Fusce cursus metus in enim volutpat, id euismod odio tempor. Pellentesque facilisis massa a dapibus convallis. In lectus lectus, placerat nec sollicitudin accumsan, dignissim non quam. Aliquam lobortis ultricies tortor rutrum eleifend.";
 
 HRESULT initGraphicsResources(HWND window)
 {
@@ -39,12 +45,38 @@ HRESULT initGraphicsResources(HWND window)
 
 void onPaint()
 {
+	if(!textFormat)
+	{
+		writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
+		                               DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
+		                               21.0f, L"en-us", &textFormat);
+	}
+
+	if(!textLayout)
+	{
+		textLayoutRect.left = 200;
+		textLayoutRect.right = 1080;
+		textLayoutRect.top = 40;
+		textLayoutRect.bottom = 320;
+		writeFactory->CreateTextLayout(textBuffer, arrayCount(textBuffer), textFormat,
+		                               textLayoutRect.right - textLayoutRect.left,
+		                               textLayoutRect.bottom - textLayoutRect.top,
+		                               &textLayout);
+	}
+
 	renderTarget->BeginDraw();
 
+	// NOTE: clear background
 	renderTarget->Clear(D2D1::ColorF(0.33f, 0.77f, 1.0f));
 
+	// NOTE: draw text area rectangle
 	brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
 	renderTarget->FillRoundedRectangle(&textRect, brush);
+
+	// NOTE: draw text
+	brush->SetColor(D2D1::ColorF(0.0f, 0.0f, 0.0f));
+	renderTarget->DrawTextLayout(D2D1::Point2F(textLayoutRect.left, textLayoutRect.top),
+	                             textLayout, brush);
 
 	renderTarget->EndDraw();
 }
