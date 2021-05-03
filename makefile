@@ -30,11 +30,14 @@ kninja: setup_dirs $(CODE_DIR)/KNinja.cpp
 fileio: setup_dirs $(CODE_DIR)/FileIO.cpp
 	$(COMPILER) $(COMMON_FLAGS) $(COMPILER_FLAGS) -c $(CODE_DIR)/FileIO.cpp /Fo:$(BUID_DIR)/FileIO.obj
 
+error: setup_dirs $(CODE_DIR)/ErrorMessage.cpp
+	$(COMPILER) $(COMMON_FLAGS) $(COMPILER_FLAGS) -c $(CODE_DIR)/ErrorMessage.cpp /Fo:$(BUID_DIR)/ErrorMessage.obj
 
-tests: setup_dirs tests.obj fileio
+
+tests: setup_dirs tests.obj fileio error
 	cd $(BUID_DIR)
 	$(LINKER) $(COMMON_FLAGS) /DEBUG \
-	Tests.obj FileIO.obj \
+	Tests.obj FileIO.obj ErrorMessage.obj \
 	/Fe:Tests.exe
 
 tests.obj: setup_dirs $(CODE_DIR)/Tests.cpp
