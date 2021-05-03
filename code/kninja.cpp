@@ -7,13 +7,29 @@
 ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
 ID2D1SolidColorBrush *brush;
-
-D2D1_ROUNDED_RECT textRect;
+ID2D1SolidColorBrush *whiteBrush;
 
 IDWriteFactory *writeFactory;
 IDWriteTextFormat *textFormat;
 IDWriteTextLayout *textLayout;
+
+// NOTE: text layout
 D2D1_RECT_F textLayoutRect;
+
+// NOTE: rectangles (areas)
+D2D1_ROUNDED_RECT textRect;
+
+// NOTE: text
+UINT bufferIndex = 0; // NOTE: current character index
+D2D1_RECT_F cursorRect = {0};
+
+// NOTE: colors
+D2D1_COLOR_F cursorFillColorGreen = D2D1::ColorF(0x5BC538);
+D2D1_COLOR_F cursorFillColorRed = D2D1::ColorF(0xF36707);
+D2D1_COLOR_F cursorFillColor = cursorFillColorGreen;
+D2D1_COLOR_F colorBlack = D2D1::ColorF(0x000000);
+D2D1_COLOR_F colorWhite = D2D1::ColorF(0xFFFFFF);
+D2D1_COLOR_F backgroundColor = D2D1::ColorF(0x55C5FF);
 
 #define BUFFER_SIZE 2048
 WCHAR *textBuffer = 0;
@@ -43,13 +59,36 @@ HRESULT initGraphicsResources(HWND window)
 	return(result);
 }
 
-void onPaint()
+void drawCursor(HWND windowHandle, D2D1_RECT_F layoutRect)
 {
+	float cursorX;
+	float cursorY;
+	DWRITE_HIT_TEST_METRICS cursorMetrics;
+	textLayout->HitTestTextPosition(bufferIndex, 0, &cursorX, &cursorY, &cursorMetrics);
+
+	cursorRect.left = layoutRect.left + cursorX;
+	cursorRect.right = cursorRect.left + cursorMetrics.width;
+	cursorRect.top = layoutRect.top + cursorY;
+	cursorRect.bottom = cursorRect.top + cursorMetrics.height;
+
+	D2D1_ROUNDED_RECT cursorRectR;
+	cursorRectR.rect = cursorRect;
+	cursorRectR.radiusX = 1.0f;
+	cursorRectR.radiusY = 1.0f;
+
+	brush->SetColor(cursorFillColor);
+	renderTarget->FillRoundedRectangle(&cursorRectR, brush);
+}
+
+HRESULT onPaint(HWND windowHandle)
+{
+	HRESULT hr;
+
 	if(!textFormat)
 	{
-		writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
-		                               DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
-		                               21.0f, L"en-us", &textFormat);
+		hr = writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
+		                               		DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
+		                               		21.0f, L"en-us", &textFormat);
 	}
 
 	if(!textLayout)
@@ -67,26 +106,36 @@ void onPaint()
 	renderTarget->BeginDraw();
 
 	// NOTE: clear background
-	renderTarget->Clear(D2D1::ColorF(0.33f, 0.77f, 1.0f));
+	renderTarget->Clear(backgroundColor);
 
 	// NOTE: draw text area rectangle
-	brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
+	brush->SetColor(colorWhite);
 	renderTarget->FillRoundedRectangle(&textRect, brush);
 
+	// NOTE: drawing text cursor
+	drawCursor(windowHandle, textLayoutRect);
+
+	// NOTE: Highlighting current character with white color
+    if(!whiteBrush) renderTarget->CreateSolidColorBrush(colorWhite, &whiteBrush);
+    DWRITE_TEXT_RANGE currentCursorPosition = {bufferIndex, 1};
+    hr = textLayout->SetDrawingEffect(whiteBrush, currentCursorPosition);
+
 	// NOTE: draw text
-	brush->SetColor(D2D1::ColorF(0.0f, 0.0f, 0.0f));
+	brush->SetColor(colorBlack);
 	renderTarget->DrawTextLayout(D2D1::Point2F(textLayoutRect.left, textLayoutRect.top),
 	                             textLayout, brush);
 
 	renderTarget->EndDraw();
+
+	return(hr);
 }
 
-LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT result = 0;
 	HRESULT hr = 0;
 
-	switch(msg)
+	switch(message)
 	{
 		case WM_CREATE:
 		{
@@ -97,8 +146,8 @@ LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lPara
 
 		case WM_PAINT:
 		{
-			initGraphicsResources(window);
-			onPaint();
+			initGraphicsResources(windowHandle);
+			onPaint(windowHandle);
 		} break;
 
 		case WM_SIZE:
@@ -106,16 +155,16 @@ LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lPara
 			if(renderTarget)
 			{
 				RECT clientRect;
-				GetClientRect(window, &clientRect);
+				GetClientRect(windowHandle, &clientRect);
 				D2D1_SIZE_U clientRectSize = D2D1::SizeU(clientRect.right, clientRect.bottom);
 				renderTarget->Resize(clientRectSize);
-				InvalidateRect(window, 0, false);
+				InvalidateRect(windowHandle, 0, false);
 			}
 		} break;
 
 		case WM_CLOSE:
 		{
-			DestroyWindow(window);
+			DestroyWindow(windowHandle);
 		} break;
 
 		case WM_DESTROY:
@@ -125,7 +174,7 @@ LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lPara
 
 		default:
 		{
-			result = DefWindowProc(window, msg, wParam, lParam);
+			result = DefWindowProc(windowHandle, message, wParam, lParam);
 		} break;
 	}
 
