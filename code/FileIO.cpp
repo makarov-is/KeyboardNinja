@@ -9,6 +9,7 @@
 #include <windows.h>
 
 #include "FileIO.hpp"
+#include "ErrorMessage.hpp"
 
 char *allocTemporaryBuffer(UINT bufferSize)
 {
@@ -18,10 +19,16 @@ char *allocTemporaryBuffer(UINT bufferSize)
 
 bool checkFileSizeOK(UINT bytesRead, UINT outBufferSize)
 {
-	bool result = false;
+	bool result = true;
+	if(bytesRead <= 0 || outBufferSize <= 0)
+	{
+		result = false;
+		return(result);
+	}
+
 	if(bytesRead > outBufferSize - 1)
 	{
-		result = true;
+		result = false;
 	}
 	return(result);
 }
@@ -36,7 +43,7 @@ void readFile(const wchar_t *filename, WCHAR **outBuffer, UINT outBufferSize)
 	file = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if(file == INVALID_HANDLE_VALUE)
 	{
-		//TODO: error handling
+		printLastError();
 	    return;
 	}
 
@@ -44,14 +51,16 @@ void readFile(const wchar_t *filename, WCHAR **outBuffer, UINT outBufferSize)
 	BOOL read = ReadFile(file, buffer, outBufferSize, (LPDWORD)&bytesRead, 0);
 	if(!read)
 	{
-		//TODO: error handling
+		printLastError();
+
 		CloseHandle(file);
 		return;
 	}
 
 	if(!checkFileSizeOK(bytesRead ,outBufferSize))
 	{
-		// TODO: load default txt file
+		printLastError();
+
 		CloseHandle(file);
 		return;
 	}

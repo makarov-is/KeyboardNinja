@@ -2,7 +2,7 @@
 #include <d2d1.h>
 #include <dwrite.h>
 
-#define arrayCount(name) ((sizeof(name))/(sizeof((name)[0])))
+#include "FileIO.hpp"
 
 ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
@@ -15,8 +15,8 @@ IDWriteTextFormat *textFormat;
 IDWriteTextLayout *textLayout;
 D2D1_RECT_F textLayoutRect;
 
-#define BUFFER_SIZE
-WCHAR textBuffer[BUFFER_SIZE] = L"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec bibendum vel ipsum id congue. Duis semper ex at volutpat luctus. Donec sodales placerat mi quis tempus. Proin aliquet velit eu libero vestibulum iaculis. Donec nunc nulla, commodo at ultricies id, aliquet eu odio. Fusce cursus metus in enim volutpat, id euismod odio tempor. Pellentesque facilisis massa a dapibus convallis. In lectus lectus, placerat nec sollicitudin accumsan, dignissim non quam. Aliquam lobortis ultricies tortor rutrum eleifend.";
+#define BUFFER_SIZE 2048
+WCHAR *textBuffer = 0;
 
 HRESULT initGraphicsResources(HWND window)
 {
@@ -58,7 +58,7 @@ void onPaint()
 		textLayoutRect.right = 1080;
 		textLayoutRect.top = 40;
 		textLayoutRect.bottom = 320;
-		writeFactory->CreateTextLayout(textBuffer, arrayCount(textBuffer), textFormat,
+		writeFactory->CreateTextLayout(textBuffer, BUFFER_SIZE, textFormat,
 		                               textLayoutRect.right - textLayoutRect.left,
 		                               textLayoutRect.bottom - textLayoutRect.top,
 		                               &textLayout);
@@ -154,6 +154,14 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 		desiredRect.bottom - desiredRect.top, 
 		0, 0, instance, 0
 	);
+
+	//NOTE: initialize textBuffer
+	textBuffer = (WCHAR *)calloc(BUFFER_SIZE, sizeof(WCHAR));
+
+	// NOTE: loading text file
+	wchar_t *filename = L"texts\\ru.txt";
+	readFile(filename, &textBuffer, BUFFER_SIZE);
+
 	ShowWindow(window, showCmd);
 
 	MSG msg = {};
