@@ -19,10 +19,10 @@ char *allocTemporaryBuffer(UINT bufferSize)
 
 bool checkFileSizeOK(UINT bytesRead, UINT outBufferSize)
 {
-	bool result = false;
+	bool result = true;
 	if(bytesRead > outBufferSize - 1)
 	{
-		result = true;
+		result = false;
 	}
 	return(result);
 }

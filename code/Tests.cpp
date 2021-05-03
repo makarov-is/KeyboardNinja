@@ -19,13 +19,13 @@ void fileIO_checkFileSizeOK(void)
 {
 	bool result;
 
-	result = checkFileSizeOK(20, 10);
+	result = checkFileSizeOK(10, 20);
 	TEST_CHECK(result);
+
+	result = checkFileSizeOK(20, 10);
+	TEST_CHECK(!result);
 
 	result = checkFileSizeOK(5, 5);
-	TEST_CHECK(result);
-
-	result = checkFileSizeOK(10, 20);
 	TEST_CHECK(!result);
 
 	result = checkFileSizeOK(-15, 5);

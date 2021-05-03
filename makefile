@@ -21,7 +21,7 @@ run:
 main: setup_dirs kninja
 	cd $(BUID_DIR)
 	$(LINKER) $(COMMON_FLAGS) /DEBUG \
-	KNinja.obj $(LIBS) \
+	KNinja.obj FileIO.obj ErrorMessage.obj $(LIBS) \
 	/Fe:KNinja.exe
 
 kninja: setup_dirs $(CODE_DIR)/KNinja.cpp
@@ -32,6 +32,8 @@ fileio: setup_dirs $(CODE_DIR)/FileIO.cpp
 
 error: setup_dirs $(CODE_DIR)/ErrorMessage.cpp
 	$(COMPILER) $(COMMON_FLAGS) $(COMPILER_FLAGS) -c $(CODE_DIR)/ErrorMessage.cpp /Fo:$(BUID_DIR)/ErrorMessage.obj
+
+modules: fileio error
 
 
 tests: setup_dirs tests.obj fileio error
