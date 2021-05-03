@@ -26,3 +26,14 @@ main: setup_dirs kninja
 
 kninja: setup_dirs $(CODE_DIR)/KNinja.cpp
 	$(COMPILER) $(COMMON_FLAGS) $(COMPILER_FLAGS) -c $(CODE_DIR)/KNinja.cpp /Fo:$(BUID_DIR)/KNinja.obj
+
+
+tests: setup_dirs tests.obj
+	cd $(BUID_DIR)
+	$(LINKER) $(COMMON_FLAGS) /DEBUG tests.obj /Fe:Tests.exe
+
+tests.obj: setup_dirs $(CODE_DIR)/Tests.cpp
+	$(COMPILER) $(COMMON_FLAGS) $(COMPILER_FLAGS) -c $(CODE_DIR)/Tests.cpp /Fo:$(BUID_DIR)/Tests.obj
+
+test:
+	build\Tests.exe
