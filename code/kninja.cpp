@@ -1,3 +1,11 @@
+#ifndef UNICODE
+#define UNICODE
+#endif
+
+#ifndef _UNICODE
+#define _UNICODE  
+#endif
+
 #include <Windows.h>
 #include <d2d1.h>
 #include <dwrite.h>
@@ -20,8 +28,15 @@ D2D1_RECT_F textLayoutRect;
 D2D1_ROUNDED_RECT textRect;
 
 // NOTE: text
+#define BUFFER_SIZE 2048
+WCHAR *textBuffer = 0;
+
 UINT bufferIndex = 0; // NOTE: current character index
+UINT previousBufferIndex = 0; // NOTE: last typed character index
 D2D1_RECT_F cursorRect = {0};
+
+// NOTE: flags
+bool typingBegan = false;
 
 // NOTE: colors
 D2D1_COLOR_F cursorFillColorGreen = D2D1::ColorF(0x5BC538);
@@ -31,8 +46,7 @@ D2D1_COLOR_F colorBlack = D2D1::ColorF(0x000000);
 D2D1_COLOR_F colorWhite = D2D1::ColorF(0xFFFFFF);
 D2D1_COLOR_F backgroundColor = D2D1::ColorF(0x55C5FF);
 
-#define BUFFER_SIZE 2048
-WCHAR *textBuffer = 0;
+//===============================================================
 
 HRESULT initGraphicsResources(HWND window)
 {
@@ -115,10 +129,30 @@ HRESULT onPaint(HWND windowHandle)
 	// NOTE: drawing text cursor
 	drawCursor(windowHandle, textLayoutRect);
 
-	// NOTE: Highlighting current character with white color
+	// NOTE: highlighting current character with white color
     if(!whiteBrush) renderTarget->CreateSolidColorBrush(colorWhite, &whiteBrush);
     DWRITE_TEXT_RANGE currentCursorPosition = {bufferIndex, 1};
     hr = textLayout->SetDrawingEffect(whiteBrush, currentCursorPosition);
+
+    // NOTE: repainting last typed characters (black)
+    UINT chars = 4;
+    if(bufferIndex > (chars - 1))
+    {
+    	DWRITE_TEXT_RANGE previousCursorPosition = {bufferIndex - chars, chars};
+    	DWRITE_TEXT_RANGE previousCharacter = {previousBufferIndex, 1};
+    	brush->SetColor(colorBlack);
+    	textLayout->SetDrawingEffect(brush, previousCursorPosition);
+    	textLayout->SetDrawingEffect(brush, previousCharacter);
+    }
+    else
+    {
+    	if(typingBegan)
+    	{
+    		DWRITE_TEXT_RANGE previousCharacter = {previousBufferIndex, 1};
+    		brush->SetColor(colorBlack);
+    		textLayout->SetDrawingEffect(brush, previousCharacter);
+    	}
+    }
 
 	// NOTE: draw text
 	brush->SetColor(colorBlack);
@@ -146,8 +180,27 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 
 		case WM_PAINT:
 		{
-			initGraphicsResources(windowHandle);
-			onPaint(windowHandle);
+			hr = initGraphicsResources(windowHandle);
+			hr = onPaint(windowHandle);
+		} break;
+
+		case WM_CHAR:
+		{
+			wchar_t inputChar = (wchar_t)wParam;
+			wchar_t c = textBuffer[bufferIndex];
+			if(inputChar == c)
+			{
+				if(!typingBegan)
+				{
+					typingBegan = true;
+				}
+
+				cursorFillColor = cursorFillColorGreen;
+
+				previousBufferIndex = bufferIndex;
+				++bufferIndex;
+			}
+
 		} break;
 
 		case WM_SIZE:
@@ -183,7 +236,7 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 
 int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showCmd)
 {
-	char *windowClassName = "KNWindow";
+	WCHAR *windowClassName = L"KNWindow";
 
 	WNDCLASS windowClass = {};
 	windowClass.lpfnWndProc = KNWindowProc;
@@ -198,7 +251,7 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	AdjustWindowRect(&desiredRect, WS_OVERLAPPEDWINDOW, false);
 
 	HWND window = CreateWindow(
-		windowClassName, "KeyboardNinja", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
+		windowClassName, L"KeyboardNinja", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
 		desiredRect.right - desiredRect.left, 
 		desiredRect.bottom - desiredRect.top, 
 		0, 0, instance, 0
