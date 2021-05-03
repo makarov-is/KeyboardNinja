@@ -28,15 +28,6 @@ void fileIO_checkFileSizeOK(void)
 	result = checkFileSizeOK(5, 5);
 	TEST_CHECK(!result);
 
-	result = checkFileSizeOK(-15, 5);
-	TEST_CHECK(!result);
-
-	result = checkFileSizeOK(15, -5);
-	TEST_CHECK(!result);
-
-	result = checkFileSizeOK(-10, -5);
-	TEST_CHECK(!result);
-
 	result = checkFileSizeOK(1, 0);
 	TEST_CHECK(!result);
 
