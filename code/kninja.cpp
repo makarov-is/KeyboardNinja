@@ -39,6 +39,7 @@ Keyboard keyboard;
 // NOTE: text
 #define BUFFER_SIZE 2048
 WCHAR *textBuffer = 0;
+UINT textLength;
 
 UINT bufferIndex = 0; // NOTE: current character index
 UINT previousBufferIndex = 0; // NOTE: last typed character index
@@ -46,6 +47,7 @@ D2D1_RECT_F cursorRect = {0};
 
 // NOTE: flags
 bool typingBegan = false;
+bool pauseMode = false;
 
 // NOTE: colors
 D2D1_COLOR_F cursorFillColorGreen = D2D1::ColorF(0x5BC538);
@@ -210,12 +212,14 @@ void readRandomFile(UINT layout)
 	name += std::wstring(txt);
 	name += std::wstring(L".txt");
 
-	readFile(name.c_str(), &textBuffer, BUFFER_SIZE, &bufferIndex);
+	readFile(name.c_str(), &textBuffer, BUFFER_SIZE, &textLength, &bufferIndex);
 }
 
 void restart()
 {
 	bufferIndex = 0;
+
+	pauseMode = false;
 
 	cursorFillColor = cursorFillColorGreen;
 }
@@ -257,6 +261,14 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 
 				previousBufferIndex = bufferIndex;
 				++bufferIndex;
+
+
+				if(bufferIndex == textLength)
+				{
+					typingBegan = false;
+
+					pauseMode = true;
+				}
 			}
 
 		} break;
@@ -266,6 +278,22 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 		{
 			UINT vkCode = (UINT)wParam;
 			bool isDown = ((lParam & (1 << 31)) == 0);
+
+			if(pauseMode)
+			{
+				if(vkCode == VK_RETURN && isDown)
+				{
+					discardTextLayout(&textLayout);
+					readRandomFile(keyboard.currentKeyboardLayout);
+
+					restart();
+				}
+
+				if(vkCode == VK_SPACE && isDown)
+				{
+					restart();
+				}
+			}
 
 			if(vkCode == VK_F1 && isDown)
 			{
@@ -336,7 +364,7 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 
 	// NOTE: loading text file
 	WCHAR *filename = L"texts\\ru.txt";
-	readFile(filename, &textBuffer, BUFFER_SIZE, &bufferIndex);
+	readFile(filename, &textBuffer, BUFFER_SIZE, &textLength, &bufferIndex);
 
 	// NOTE: drawing areas
 	textRect = roundedRectAt(190, 30, 900, 300, 10);
