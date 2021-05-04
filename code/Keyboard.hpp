@@ -6,6 +6,9 @@
 
 #include "Shapes.hpp"
 
+#define LAYOUT_RU 0x00000419
+#define LAYOUT_ENG 0x00000409
+
 class Keyboard
 {
 public:
@@ -48,10 +51,26 @@ public:
 	wchar_t keyboardRU[4][12] = 
 	{
 		{L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'-', L'='},
-		{L'–ô', L'–¶', L'–£', L'–ö', L'–ï', L'–ù', L'–ì', L'–®', L'–©', L'–ó', L'–•', L'–™'},
-		{L'–§', L'–´', L'–í', L'–ê', L'–ü', L'–†', L'–û', L'–õ', L'–î', L'–ñ', L'–≠', L' '},
-		{L'–Ø', L'–ß', L'–°', L'–ú', L'–ò', L'–¢', L'–¨', L'–ë', L'–Æ', L'.', L' ', L' '}
+		{L'…', L'÷', L'”', L' ', L'≈', L'Õ', L'√', L'ÿ', L'Ÿ', L'«', L'’', L'⁄'},
+		{L'‘', L'€', L'¬', L'¿', L'œ', L'–', L'Œ', L'À', L'ƒ', L'∆', L'›', L' '},
+		{L'ﬂ', L'◊', L'—', L'Ã', L'»', L'“', L'‹', L'¡', L'ﬁ', L'.', L' ', L' '}
 	};
+
+	D2D1_COLOR_F keyboardColorsRow1[12] = 
+	{
+		keyColorGreen, keyColorGreen, keyColorCyan, keyColorPink, keyColorOrange,
+		keyColorOrange, keyColorYellow, keyColorPink, keyColorCyan, keyColorGreen,
+		keyColorGreen, keyColorGreen
+	};
+
+	D2D1_COLOR_F keyboardColors[10] = 
+	{
+		keyColorGreen, keyColorCyan, keyColorPink, keyColorOrange, keyColorOrange, 
+		keyColorYellow, keyColorYellow, keyColorPink, keyColorCyan, keyColorGreen
+	};
+
+	wchar_t (*keyboard)[12];
+	UINT currentKeyboardLayout;
 };
 
 #endif KEYBOARD_H

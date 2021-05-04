@@ -11,6 +11,9 @@ Keyboard::~Keyboard()
 void Keyboard::init(IDWriteTextFormat **textFormat)
 {
 	keyboardTextFormat = (*textFormat);
+
+	keyboard = keyboardRU;
+	currentKeyboardLayout = LAYOUT_RU;
 }
 
 void Keyboard::drawKey(const wchar_t *keyStr, UINT keyStrLength, 
@@ -48,5 +51,30 @@ void Keyboard::drawKeyboard(ID2D1SolidColorBrush **brush, ID2D1HwndRenderTarget 
 	int posX = 256;
 	int posY = 370;
 
-	drawKey(L"A", 1, 256, posY, w, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+	// NOTE: tilde
+	drawKey(L"", 1, posX, posY, w, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+	// NOTE: first row
+	posX = 307;
+	for(int i = 0; i < 12; i++)
+	{
+		drawKey(&keyboard[0][i], 1, posX, posY, w, h, r, keyboardColorsRow1[i], keyColorLetter, renderTarget);
+		posX += 51;
+	}
+	// NOTE: backspace
+	drawKey(L"", 1, posX, posY, 86, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+
+	// NOTE: second row
+	posY += 55;
+	drawKey(L"TAB", 3, 256, posY, 68, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+	posX = 330;
+	for(int j = 0; j < 10; j++)
+	{
+		drawKey(&keyboard[1][j], 1, posX, posY, w, h, r, keyboardColors[j], keyColorLetter, renderTarget);
+		posX += 51;
+	}
+	drawKey(&keyboard[1][10], 1, posX, posY, w, h, r, keyboardColors[0], keyColorLetter, renderTarget);
+	posX += 51;
+	drawKey(&keyboard[1][11], 1, posX, posY, w, h, r, keyboardColors[0], keyColorLetter, renderTarget);
+	posX += 51;
+	drawKey(L"\\", 1, posX, posY, 63, h, r, keyColorGray, keyColorLetterDim, renderTarget);
 }
