@@ -10,6 +10,7 @@
 #include <d2d1.h>
 #include <dwrite.h>
 
+#include <locale.h>
 #include <string>
 
 #include "FileIO.hpp"
@@ -192,7 +193,7 @@ HRESULT onPaint(HWND windowHandle)
 
 void readRandomFile(UINT layout)
 {
-	wchar_t *filename = L"texts\\ru";
+	WCHAR *filename = L"texts\\ru";
 #if 1
 	if(layout == LAYOUT_RU)
 	{
@@ -206,9 +207,9 @@ void readRandomFile(UINT layout)
 
 	std::wstring name(filename);
 
-	wchar_t buffer[5];
+	WCHAR buffer[5];
 	int randNumber = rand() % 10;
-	wchar_t *txt = _itow(randNumber, buffer, 10);
+	WCHAR *txt = _itow(randNumber, buffer, 10);
 	name += std::wstring(txt);
 	name += std::wstring(L".txt");
 
@@ -219,7 +220,11 @@ void restart()
 {
 	bufferIndex = 0;
 
+	WCHAR charCopy = textBuffer[bufferIndex];
+	keyboard.findKeyOnBoard(_wcsupr(&charCopy));
+
 	pauseMode = false;
+	keyboard.borderVisible = true;
 
 	cursorFillColor = cursorFillColorGreen;
 }
@@ -262,11 +267,14 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 				previousBufferIndex = bufferIndex;
 				++bufferIndex;
 
+				WCHAR charCopy = textBuffer[bufferIndex];
+				keyboard.findKeyOnBoard(_wcsupr(&charCopy));
 
 				if(bufferIndex == textLength)
 				{
 					typingBegan = false;
 
+					keyboard.borderVisible = false;
 					pauseMode = true;
 				}
 			}
@@ -338,6 +346,9 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 
 int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showCmd)
 {
+	// NOTE: for _wcsupr() function
+	setlocale(LC_ALL, "Russian");
+
 	WCHAR *windowClassName = L"KNWindow";
 
 	WNDCLASS windowClass = {};
@@ -359,6 +370,9 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 		0, 0, instance, 0
 	);
 
+	// NOTE: drawing areas
+	textRect = roundedRectAt(190, 30, 900, 300, 10);
+
 	//NOTE: initialize textBuffer
 	textBuffer = (WCHAR *)calloc(BUFFER_SIZE, sizeof(WCHAR));
 
@@ -366,8 +380,8 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	WCHAR *filename = L"texts\\ru.txt";
 	readFile(filename, &textBuffer, BUFFER_SIZE, &textLength, &bufferIndex);
 
-	// NOTE: drawing areas
-	textRect = roundedRectAt(190, 30, 900, 300, 10);
+	// NOTE: initialize all variables
+	restart();
 
 	// NOTE: show window on screen
 	ShowWindow(window, showCmd);

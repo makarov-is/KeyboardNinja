@@ -33,7 +33,7 @@ bool checkFileSizeOK(UINT bytesRead, UINT outBufferSize)
 	return(result);
 }
 
-void readFile(const wchar_t *filename, WCHAR **outBuffer, UINT outBufferSize, 
+void readFile(const WCHAR *filename, WCHAR **outBuffer, UINT outBufferSize, 
               UINT *textLength, UINT *bufferIndex)
 {
 	bool result = false;
@@ -74,7 +74,7 @@ void readFile(const wchar_t *filename, WCHAR **outBuffer, UINT outBufferSize,
 	int wcharIndex = 0;
 	while(wcharIndex < outBufferSize)
 	{
-		wchar_t wchar = (*outBuffer)[wcharIndex];
+		WCHAR wchar = (*outBuffer)[wcharIndex];
 		if(wchar == '\0') break;
 		++wcharIndex;
 	}

@@ -16,7 +16,36 @@ void Keyboard::init(IDWriteTextFormat **textFormat)
 	currentKeyboardLayout = LAYOUT_RU;
 }
 
-void Keyboard::drawKey(const wchar_t *keyStr, UINT keyStrLength, 
+key_pos Keyboard::findKeyOnBoard(WCHAR *key)
+{
+	key_pos result = {0, 0};
+	bool keyNotFound = true;
+
+	for(int i = 0; i < 4; i++)
+	{
+		for(int j = 0; j < 12; j++)
+		{
+			if(*key == keyboard[i][j])
+			{
+				result.row = i;
+				result.col = j;
+				if(*key == L' ') result.row = 4;
+
+				keyNotFound = false;
+				break;
+			}
+		}
+	}
+
+	if(keyNotFound) borderVisible = false;
+	else borderVisible = true;
+
+	currentKeyPosition = result;
+
+	return(result);
+}
+
+void Keyboard::drawKey(const WCHAR *keyStr, UINT keyStrLength, 
                        int x, int y, int width, int height, int radius, 
 					   D2D1_COLOR_F bgColor, D2D1_COLOR_F letterColor, 
 					   ID2D1HwndRenderTarget **renderTarget)
@@ -105,6 +134,28 @@ void Keyboard::drawKeyboard(ID2D1SolidColorBrush **brush, ID2D1HwndRenderTarget 
 	// NOTE: spacebar
 	posY += 55;
 	drawKey(L"", 1, 414, 590, 429, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+
+
+	// NOTE: "current key" border
+	int row = currentKeyPosition.row;
+	int col = currentKeyPosition.col;
+
+	posY = 370 + (row*55);
+
+	switch(row)
+	{
+		case 0: { posX = 307 + (col*51); } break;
+		case 1: { posX = 330 + (col*51); } break;
+		case 2: { posX = 341 + (col*51); } break;
+		case 3: { posX = 363 + (col*51); } break;
+		case 4: { posX = 414; posY = 590; w = 429;} break;
+		default: {} break;
+	}
+
+	// NOTE: Highlighing current character on keyboard
+	D2D1_ROUNDED_RECT borderRect = roundedRectAt(posX, posY, w, h, r);
+	(*brush)->SetColor(D2D1::ColorF(0xFFFFFF));
+	if(borderVisible) (*renderTarget)->DrawRoundedRectangle(&borderRect, (*brush), 3.0f);
 }
 
 void Keyboard::switchLayout()
