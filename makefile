@@ -21,7 +21,7 @@ run:
 main: setup_dirs kninja
 	cd $(BUID_DIR)
 	$(LINKER) $(COMMON_FLAGS) /DEBUG \
-	KNinja.obj FileIO.obj ErrorMessage.obj Shapes.obj $(LIBS) \
+	KNinja.obj FileIO.obj ErrorMessage.obj Shapes.obj Keyboard.obj $(LIBS) \
 	/Fe:KNinja.exe
 
 kninja: setup_dirs $(CODE_DIR)/KNinja.cpp
@@ -36,13 +36,16 @@ error: setup_dirs $(CODE_DIR)/ErrorMessage.cpp
 shapes: setup_dirs $(CODE_DIR)/Shapes.cpp
 	$(COMPILER) $(COMMON_FLAGS) $(COMPILER_FLAGS) -c $(CODE_DIR)/Shapes.cpp /Fo:$(BUID_DIR)/Shapes.obj
 
-modules: fileio error shapes
+keyboard: setup_dirs $(CODE_DIR)/Keyboard.cpp
+	$(COMPILER) $(COMMON_FLAGS) $(COMPILER_FLAGS) -c $(CODE_DIR)/Keyboard.cpp /Fo:$(BUID_DIR)/Keyboard.obj
+
+modules: fileio error shapes keyboard
 
 
-tests: setup_dirs tests.obj fileio error shapes
+tests: setup_dirs tests.obj fileio error shapes keyboard
 	cd $(BUID_DIR)
 	$(LINKER) $(COMMON_FLAGS) /DEBUG \
-	Tests.obj FileIO.obj ErrorMessage.obj Shapes.obj \
+	Tests.obj FileIO.obj ErrorMessage.obj Shapes.obj Keyboard.obj \
 	/Fe:Tests.exe
 
 tests.obj: setup_dirs $(CODE_DIR)/Tests.cpp

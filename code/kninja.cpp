@@ -12,6 +12,7 @@
 
 #include "FileIO.hpp"
 #include "Shapes.hpp"
+#include "Keyboard.hpp"
 
 ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
@@ -27,6 +28,9 @@ D2D1_RECT_F textLayoutRect;
 
 // NOTE: rectangles (areas)
 D2D1_ROUNDED_RECT textRect;
+
+// NOTE: Keyboard object
+Keyboard keyboard;
 
 // NOTE: text
 #define BUFFER_SIZE 2048
@@ -159,6 +163,9 @@ HRESULT onPaint(HWND windowHandle)
 	brush->SetColor(colorBlack);
 	renderTarget->DrawTextLayout(D2D1::Point2F(textLayoutRect.left, textLayoutRect.top),
 	                             textLayout, brush);
+
+	// NOTE: drawing keyboard
+	keyboard.drawKeyboard(&brush, &renderTarget);
 
 	renderTarget->EndDraw();
 
