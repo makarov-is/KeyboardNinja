@@ -33,6 +33,7 @@ D2D1_RECT_F textLayoutRect;
 
 // NOTE: rectangles (areas)
 D2D1_ROUNDED_RECT textRect;
+D2D1_ROUNDED_RECT statsRect;
 
 // NOTE: Keyboard object
 Keyboard keyboard;
@@ -71,14 +72,10 @@ HRESULT initGraphicsResources(HWND window)
 		D2D1_SIZE_U renderTargetSize = D2D1::SizeU(clientRect.right, clientRect.bottom);
 
 		result = factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(),
-		                                         D2D1::HwndRenderTargetProperties(window, renderTargetSize), 
-		                                         &renderTarget);
+			D2D1::HwndRenderTargetProperties(window, renderTargetSize), &renderTarget);
 		if(SUCCEEDED(result))
 		{
-			D2D1_COLOR_F brushColor = D2D1::ColorF(0.0f, 0.0f, 0.0f);
-			result = renderTarget->CreateSolidColorBrush(brushColor, &brush);
-
-			textRect = D2D1::RoundedRect(D2D1::RectF(190.0f, 30.0f, 1090.0f, 330.0f), 10.0f, 10.0f);
+			result = renderTarget->CreateSolidColorBrush(colorBlack, &brush);
 		}
 	}
 
@@ -131,8 +128,8 @@ HRESULT onPaint(HWND windowHandle)
 
 	if(!textLayout)
 	{
-		textLayoutRect.left = 200;
-		textLayoutRect.right = 1080;
+		textLayoutRect.left = 120;
+		textLayoutRect.right = 1000;
 		textLayoutRect.top = 40;
 		textLayoutRect.bottom = 320;
 		writeFactory->CreateTextLayout(textBuffer, BUFFER_SIZE, textFormat,
@@ -149,6 +146,7 @@ HRESULT onPaint(HWND windowHandle)
 	// NOTE: draw text area rectangle
 	brush->SetColor(colorWhite);
 	renderTarget->FillRoundedRectangle(&textRect, brush);
+    renderTarget->FillRoundedRectangle(&statsRect, brush);
 
 	// NOTE: drawing text cursor
 	drawCursor(windowHandle, textLayoutRect);
@@ -313,18 +311,6 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 			}
 		} break;
 
-		case WM_SIZE:
-		{
-			if(renderTarget)
-			{
-				RECT clientRect;
-				GetClientRect(windowHandle, &clientRect);
-				D2D1_SIZE_U clientRectSize = D2D1::SizeU(clientRect.right, clientRect.bottom);
-				renderTarget->Resize(clientRectSize);
-				InvalidateRect(windowHandle, 0, false);
-			}
-		} break;
-
 		case WM_CLOSE:
 		{
 			DestroyWindow(windowHandle);
@@ -361,17 +347,19 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	RECT desiredRect = {0};
 	desiredRect.right = 1280;
 	desiredRect.bottom = 720;
-	AdjustWindowRect(&desiredRect, WS_OVERLAPPEDWINDOW, false);
+	AdjustWindowRect(&desiredRect, WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU, false);
 
 	HWND window = CreateWindow(
-		windowClassName, L"KeyboardNinja", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
+		windowClassName, L"KeyboardNinja", WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU, 
+		CW_USEDEFAULT, CW_USEDEFAULT, 
 		desiredRect.right - desiredRect.left, 
 		desiredRect.bottom - desiredRect.top, 
 		0, 0, instance, 0
 	);
 
 	// NOTE: drawing areas
-	textRect = roundedRectAt(190, 30, 900, 300, 10);
+	textRect = roundedRectAt(110, 30, 900, 300, 10);
+	statsRect = roundedRectAt(110 + 900 + 10, 30, 140, 300, 10);
 
 	//NOTE: initialize textBuffer
 	textBuffer = (WCHAR *)calloc(BUFFER_SIZE, sizeof(WCHAR));
