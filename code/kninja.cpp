@@ -217,8 +217,8 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 
 		case WM_CHAR:
 		{
-			wchar_t inputChar = (wchar_t)wParam;
-			wchar_t c = textBuffer[bufferIndex];
+			WCHAR inputChar = (WCHAR)wParam;
+			WCHAR c = textBuffer[bufferIndex];
 			if(inputChar == c)
 			{
 				if(!typingBegan)
@@ -310,7 +310,7 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	textBuffer = (WCHAR *)calloc(BUFFER_SIZE, sizeof(WCHAR));
 
 	// NOTE: loading text file
-	wchar_t *filename = L"texts\\ru.txt";
+	WCHAR *filename = L"texts\\ru.txt";
 	readFile(filename, &textBuffer, BUFFER_SIZE, &bufferIndex);
 
 	// NOTE: drawing areas
