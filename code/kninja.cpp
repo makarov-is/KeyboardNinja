@@ -114,6 +114,12 @@ void drawCursor(HWND windowHandle, D2D1_RECT_F layoutRect)
 	renderTarget->FillRoundedRectangle(&cursorRectR, brush);
 }
 
+void discardTextLayout(IDWriteTextLayout **textLayout)
+{
+	(*textLayout)->Release();
+    (*textLayout) = 0;
+}
+
 HRESULT onPaint(HWND windowHandle)
 {
 	HRESULT hr;
@@ -180,6 +186,13 @@ HRESULT onPaint(HWND windowHandle)
 	return(hr);
 }
 
+void restart()
+{
+	bufferIndex = 0;
+
+	cursorFillColor = cursorFillColorGreen;
+}
+
 LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT result = 0;
@@ -219,6 +232,24 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 				++bufferIndex;
 			}
 
+		} break;
+
+		case WM_KEYDOWN:
+		case WM_KEYUP:
+		{
+			UINT vkCode = (UINT)wParam;
+			bool isDown = ((lParam & (1 << 31)) == 0);
+
+			if(vkCode == VK_F1 && isDown)
+			{
+				keyboard.switchLayout();
+
+				discardTextLayout(&textLayout);
+
+				readFile(L"texts\\en.txt", &textBuffer, BUFFER_SIZE, &bufferIndex);
+
+				restart();
+			}
 		} break;
 
 		case WM_SIZE:
@@ -280,7 +311,7 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 
 	// NOTE: loading text file
 	wchar_t *filename = L"texts\\ru.txt";
-	readFile(filename, &textBuffer, BUFFER_SIZE);
+	readFile(filename, &textBuffer, BUFFER_SIZE, &bufferIndex);
 
 	// NOTE: drawing areas
 	textRect = roundedRectAt(190, 30, 900, 300, 10);

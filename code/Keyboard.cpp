@@ -77,4 +77,52 @@ void Keyboard::drawKeyboard(ID2D1SolidColorBrush **brush, ID2D1HwndRenderTarget 
 	drawKey(&keyboard[1][11], 1, posX, posY, w, h, r, keyboardColors[0], keyColorLetter, renderTarget);
 	posX += 51;
 	drawKey(L"\\", 1, posX, posY, 63, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+
+	// NOTE: third row
+	posY += 55;
+	drawKey(L"CAPS", 4, 256, posY, 79, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+	posX = 341;
+	for(int j = 0; j < 10; j++)
+	{
+		drawKey(&keyboard[2][j], 1, posX, posY, w, h, r, keyboardColors[j], keyColorLetter, renderTarget);
+		posX += 51;
+	}
+	drawKey(&keyboard[2][10], 1, posX, posY, w, h, r, keyColorGreen, keyColorLetter, renderTarget);
+	posX += 51;
+	drawKey(L"ENTER", 5, posX, posY, 103, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+
+	// NOTE: fourth row
+	posY += 55;
+	drawKey(L"SHIFT", 5, 256, posY, 101, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+	posX = 363;
+	for(int j = 0; j < 10; j++)
+	{
+		drawKey(&keyboard[3][j], 1, posX, posY, w, h, r, keyboardColors[j], keyColorLetter, renderTarget);
+		posX += 51;
+	}
+	drawKey(L"SHIFT", 5, posX, posY, 132, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+
+	// NOTE: spacebar
+	posY += 55;
+	drawKey(L"", 1, 414, 590, 429, h, r, keyColorGray, keyColorLetterDim, renderTarget);
+}
+
+void Keyboard::switchLayout()
+{
+	if(currentKeyboardLayout == LAYOUT_ENG)
+	{
+		keyboard = keyboardRU;
+		currentKeyboardLayout = LAYOUT_RU;
+	}
+	else if(currentKeyboardLayout == LAYOUT_RU)
+	{
+		keyboard = keyboardENG;
+		currentKeyboardLayout = LAYOUT_ENG;
+	}
+}
+
+void Keyboard::setRULayout()
+{
+	keyboard = keyboardRU;
+	currentKeyboardLayout = LAYOUT_RU;
 }

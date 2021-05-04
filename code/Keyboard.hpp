@@ -20,6 +20,8 @@ public:
 	             int x, int y, int width, int height, int radius, 
              	 D2D1_COLOR_F bgColor, D2D1_COLOR_F letterColor,
              	 ID2D1HwndRenderTarget **renderTarget);
+	void Keyboard::switchLayout();
+	void Keyboard::setRULayout();
 
 	ID2D1SolidColorBrush *keyboardBrush;
 	IDWriteTextFormat *keyboardTextFormat;
