@@ -11,6 +11,7 @@
 #include <dwrite.h>
 
 #include "FileIO.hpp"
+#include "Shapes.hpp"
 
 ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
@@ -264,6 +265,10 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	wchar_t *filename = L"texts\\ru.txt";
 	readFile(filename, &textBuffer, BUFFER_SIZE);
 
+	// NOTE: drawing areas
+	textRect = roundedRectAt(190, 30, 900, 300, 10);
+
+	// NOTE: show window on screen
 	ShowWindow(window, showCmd);
 
 	MSG msg = {};
