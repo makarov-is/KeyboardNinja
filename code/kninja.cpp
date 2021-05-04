@@ -16,14 +16,16 @@
 
 ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
+
 ID2D1SolidColorBrush *brush;
 ID2D1SolidColorBrush *whiteBrush;
 
 IDWriteFactory *writeFactory;
 IDWriteTextFormat *textFormat;
-IDWriteTextLayout *textLayout;
+IDWriteTextFormat *keyboardTextFormat;
 
 // NOTE: text layout
+IDWriteTextLayout *textLayout;
 D2D1_RECT_F textLayoutRect;
 
 // NOTE: rectangles (areas)
@@ -75,6 +77,19 @@ HRESULT initGraphicsResources(HWND window)
 		}
 	}
 
+	if(!textFormat)
+	{
+		result = writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
+		                               			DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
+		                               			21.0f, L"en-us", &textFormat);
+
+		result = writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
+		                                        DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 
+		                                        18.0f, L"en-us", &keyboardTextFormat);
+	}
+
+	keyboard.init(&keyboardTextFormat);
+
 	return(result);
 }
 
@@ -102,13 +117,6 @@ void drawCursor(HWND windowHandle, D2D1_RECT_F layoutRect)
 HRESULT onPaint(HWND windowHandle)
 {
 	HRESULT hr;
-
-	if(!textFormat)
-	{
-		hr = writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
-		                               		DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
-		                               		21.0f, L"en-us", &textFormat);
-	}
 
 	if(!textLayout)
 	{
@@ -183,12 +191,14 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 		{
 			hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &factory);
 			hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown **)&writeFactory);
+
+			hr = initGraphicsResources(windowHandle);
+
 			if(hr != S_OK) return(-1);
 		} break;
 
 		case WM_PAINT:
 		{
-			hr = initGraphicsResources(windowHandle);
 			hr = onPaint(windowHandle);
 		} break;
 
