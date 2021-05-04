@@ -1,22 +1,59 @@
+#ifndef UNICODE
+#define UNICODE
+#endif
+
+#ifndef _UNICODE
+#define _UNICODE  
+#endif
+
 #include <Windows.h>
 #include <d2d1.h>
 #include <dwrite.h>
 
 #include "FileIO.hpp"
+#include "Shapes.hpp"
+#include "Keyboard.hpp"
 
 ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
-ID2D1SolidColorBrush *brush;
 
-D2D1_ROUNDED_RECT textRect;
+ID2D1SolidColorBrush *brush;
+ID2D1SolidColorBrush *whiteBrush;
 
 IDWriteFactory *writeFactory;
 IDWriteTextFormat *textFormat;
+IDWriteTextFormat *keyboardTextFormat;
+
+// NOTE: text layout
 IDWriteTextLayout *textLayout;
 D2D1_RECT_F textLayoutRect;
 
+// NOTE: rectangles (areas)
+D2D1_ROUNDED_RECT textRect;
+
+// NOTE: Keyboard object
+Keyboard keyboard;
+
+// NOTE: text
 #define BUFFER_SIZE 2048
 WCHAR *textBuffer = 0;
+
+UINT bufferIndex = 0; // NOTE: current character index
+UINT previousBufferIndex = 0; // NOTE: last typed character index
+D2D1_RECT_F cursorRect = {0};
+
+// NOTE: flags
+bool typingBegan = false;
+
+// NOTE: colors
+D2D1_COLOR_F cursorFillColorGreen = D2D1::ColorF(0x5BC538);
+D2D1_COLOR_F cursorFillColorRed = D2D1::ColorF(0xF36707);
+D2D1_COLOR_F cursorFillColor = cursorFillColorGreen;
+D2D1_COLOR_F colorBlack = D2D1::ColorF(0x000000);
+D2D1_COLOR_F colorWhite = D2D1::ColorF(0xFFFFFF);
+D2D1_COLOR_F backgroundColor = D2D1::ColorF(0x55C5FF);
+
+//===============================================================
 
 HRESULT initGraphicsResources(HWND window)
 {
@@ -40,17 +77,52 @@ HRESULT initGraphicsResources(HWND window)
 		}
 	}
 
+	if(!textFormat)
+	{
+		result = writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
+		                               			DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
+		                               			21.0f, L"en-us", &textFormat);
+
+		result = writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
+		                                        DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 
+		                                        18.0f, L"en-us", &keyboardTextFormat);
+	}
+
+	keyboard.init(&keyboardTextFormat);
+
 	return(result);
 }
 
-void onPaint()
+void drawCursor(HWND windowHandle, D2D1_RECT_F layoutRect)
 {
-	if(!textFormat)
-	{
-		writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
-		                               DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
-		                               21.0f, L"en-us", &textFormat);
-	}
+	float cursorX;
+	float cursorY;
+	DWRITE_HIT_TEST_METRICS cursorMetrics;
+	textLayout->HitTestTextPosition(bufferIndex, 0, &cursorX, &cursorY, &cursorMetrics);
+
+	cursorRect.left = layoutRect.left + cursorX;
+	cursorRect.right = cursorRect.left + cursorMetrics.width;
+	cursorRect.top = layoutRect.top + cursorY;
+	cursorRect.bottom = cursorRect.top + cursorMetrics.height;
+
+	D2D1_ROUNDED_RECT cursorRectR;
+	cursorRectR.rect = cursorRect;
+	cursorRectR.radiusX = 1.0f;
+	cursorRectR.radiusY = 1.0f;
+
+	brush->SetColor(cursorFillColor);
+	renderTarget->FillRoundedRectangle(&cursorRectR, brush);
+}
+
+void discardTextLayout(IDWriteTextLayout **textLayout)
+{
+	(*textLayout)->Release();
+    (*textLayout) = 0;
+}
+
+HRESULT onPaint(HWND windowHandle)
+{
+	HRESULT hr;
 
 	if(!textLayout)
 	{
@@ -67,38 +139,117 @@ void onPaint()
 	renderTarget->BeginDraw();
 
 	// NOTE: clear background
-	renderTarget->Clear(D2D1::ColorF(0.33f, 0.77f, 1.0f));
+	renderTarget->Clear(backgroundColor);
 
 	// NOTE: draw text area rectangle
-	brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f));
+	brush->SetColor(colorWhite);
 	renderTarget->FillRoundedRectangle(&textRect, brush);
 
+	// NOTE: drawing text cursor
+	drawCursor(windowHandle, textLayoutRect);
+
+	// NOTE: highlighting current character with white color
+    if(!whiteBrush) renderTarget->CreateSolidColorBrush(colorWhite, &whiteBrush);
+    DWRITE_TEXT_RANGE currentCursorPosition = {bufferIndex, 1};
+    hr = textLayout->SetDrawingEffect(whiteBrush, currentCursorPosition);
+
+    // NOTE: repainting last typed characters (black)
+    UINT chars = 4;
+    if(bufferIndex > (chars - 1))
+    {
+    	DWRITE_TEXT_RANGE previousCursorPosition = {bufferIndex - chars, chars};
+    	DWRITE_TEXT_RANGE previousCharacter = {previousBufferIndex, 1};
+    	brush->SetColor(colorBlack);
+    	textLayout->SetDrawingEffect(brush, previousCursorPosition);
+    	textLayout->SetDrawingEffect(brush, previousCharacter);
+    }
+    else
+    {
+    	if(typingBegan)
+    	{
+    		DWRITE_TEXT_RANGE previousCharacter = {previousBufferIndex, 1};
+    		brush->SetColor(colorBlack);
+    		textLayout->SetDrawingEffect(brush, previousCharacter);
+    	}
+    }
+
 	// NOTE: draw text
-	brush->SetColor(D2D1::ColorF(0.0f, 0.0f, 0.0f));
+	brush->SetColor(colorBlack);
 	renderTarget->DrawTextLayout(D2D1::Point2F(textLayoutRect.left, textLayoutRect.top),
 	                             textLayout, brush);
 
+	// NOTE: drawing keyboard
+	keyboard.drawKeyboard(&brush, &renderTarget);
+
 	renderTarget->EndDraw();
+
+	return(hr);
 }
 
-LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lParam)
+void restart()
+{
+	bufferIndex = 0;
+
+	cursorFillColor = cursorFillColorGreen;
+}
+
+LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT result = 0;
 	HRESULT hr = 0;
 
-	switch(msg)
+	switch(message)
 	{
 		case WM_CREATE:
 		{
 			hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &factory);
 			hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown **)&writeFactory);
+
+			hr = initGraphicsResources(windowHandle);
+
 			if(hr != S_OK) return(-1);
 		} break;
 
 		case WM_PAINT:
 		{
-			initGraphicsResources(window);
-			onPaint();
+			hr = onPaint(windowHandle);
+		} break;
+
+		case WM_CHAR:
+		{
+			wchar_t inputChar = (wchar_t)wParam;
+			wchar_t c = textBuffer[bufferIndex];
+			if(inputChar == c)
+			{
+				if(!typingBegan)
+				{
+					typingBegan = true;
+				}
+
+				cursorFillColor = cursorFillColorGreen;
+
+				previousBufferIndex = bufferIndex;
+				++bufferIndex;
+			}
+
+		} break;
+
+		case WM_KEYDOWN:
+		case WM_KEYUP:
+		{
+			UINT vkCode = (UINT)wParam;
+			bool isDown = ((lParam & (1 << 31)) == 0);
+
+			if(vkCode == VK_F1 && isDown)
+			{
+				keyboard.switchLayout();
+
+				discardTextLayout(&textLayout);
+
+				readFile(L"texts\\en.txt", &textBuffer, BUFFER_SIZE, &bufferIndex);
+
+				restart();
+			}
 		} break;
 
 		case WM_SIZE:
@@ -106,16 +257,16 @@ LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lPara
 			if(renderTarget)
 			{
 				RECT clientRect;
-				GetClientRect(window, &clientRect);
+				GetClientRect(windowHandle, &clientRect);
 				D2D1_SIZE_U clientRectSize = D2D1::SizeU(clientRect.right, clientRect.bottom);
 				renderTarget->Resize(clientRectSize);
-				InvalidateRect(window, 0, false);
+				InvalidateRect(windowHandle, 0, false);
 			}
 		} break;
 
 		case WM_CLOSE:
 		{
-			DestroyWindow(window);
+			DestroyWindow(windowHandle);
 		} break;
 
 		case WM_DESTROY:
@@ -125,7 +276,7 @@ LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lPara
 
 		default:
 		{
-			result = DefWindowProc(window, msg, wParam, lParam);
+			result = DefWindowProc(windowHandle, message, wParam, lParam);
 		} break;
 	}
 
@@ -134,7 +285,7 @@ LRESULT CALLBACK KNWindowProc(HWND window, UINT msg, WPARAM wParam, LPARAM lPara
 
 int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showCmd)
 {
-	char *windowClassName = "KNWindow";
+	WCHAR *windowClassName = L"KNWindow";
 
 	WNDCLASS windowClass = {};
 	windowClass.lpfnWndProc = KNWindowProc;
@@ -149,7 +300,7 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	AdjustWindowRect(&desiredRect, WS_OVERLAPPEDWINDOW, false);
 
 	HWND window = CreateWindow(
-		windowClassName, "KeyboardNinja", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
+		windowClassName, L"KeyboardNinja", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
 		desiredRect.right - desiredRect.left, 
 		desiredRect.bottom - desiredRect.top, 
 		0, 0, instance, 0
@@ -160,8 +311,12 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 
 	// NOTE: loading text file
 	wchar_t *filename = L"texts\\ru.txt";
-	readFile(filename, &textBuffer, BUFFER_SIZE);
+	readFile(filename, &textBuffer, BUFFER_SIZE, &bufferIndex);
 
+	// NOTE: drawing areas
+	textRect = roundedRectAt(190, 30, 900, 300, 10);
+
+	// NOTE: show window on screen
 	ShowWindow(window, showCmd);
 
 	MSG msg = {};

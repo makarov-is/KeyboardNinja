@@ -33,12 +33,13 @@ bool checkFileSizeOK(UINT bytesRead, UINT outBufferSize)
 	return(result);
 }
 
-void readFile(const wchar_t *filename, WCHAR **outBuffer, UINT outBufferSize)
+void readFile(const wchar_t *filename, WCHAR **outBuffer, UINT outBufferSize, UINT *bufferIndex)
 {
 	bool result = false;
 	HANDLE file = 0;
 
 	char *buffer = allocTemporaryBuffer(outBufferSize);
+	*bufferIndex = 0;
 
 	file = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if(file == INVALID_HANDLE_VALUE)
