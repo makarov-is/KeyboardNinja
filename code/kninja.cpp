@@ -10,6 +10,8 @@
 #include <d2d1.h>
 #include <dwrite.h>
 
+#include <string>
+
 #include "FileIO.hpp"
 #include "Shapes.hpp"
 #include "Keyboard.hpp"
@@ -186,6 +188,31 @@ HRESULT onPaint(HWND windowHandle)
 	return(hr);
 }
 
+void readRandomFile(UINT layout)
+{
+	wchar_t *filename = L"texts\\ru";
+#if 1
+	if(layout == LAYOUT_RU)
+	{
+		filename = L"texts\\ru";
+	}
+	else if(layout == LAYOUT_ENG)
+	{
+		filename = L"texts\\en";
+	}
+#endif
+
+	std::wstring name(filename);
+
+	wchar_t buffer[5];
+	int randNumber = rand() % 10;
+	wchar_t *txt = _itow(randNumber, buffer, 10);
+	name += std::wstring(txt);
+	name += std::wstring(L".txt");
+
+	readFile(name.c_str(), &textBuffer, BUFFER_SIZE, &bufferIndex);
+}
+
 void restart()
 {
 	bufferIndex = 0;
@@ -245,9 +272,7 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 				keyboard.switchLayout();
 
 				discardTextLayout(&textLayout);
-
-				readFile(L"texts\\en.txt", &textBuffer, BUFFER_SIZE, &bufferIndex);
-
+				readRandomFile(keyboard.currentKeyboardLayout);
 				restart();
 			}
 		} break;
