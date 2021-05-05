@@ -385,6 +385,17 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 				readRandomFile(keyboard.currentKeyboardLayout);
 				restart();
 			}
+
+			if(vkCode == VK_F5 && isDown)
+			{
+				previousBufferIndex = bufferIndex;
+				bufferIndex =  textLength - 2;
+
+				cursorFillColor = cursorFillColorGreen;
+
+				wchar_t charCopy = textBuffer[bufferIndex];
+				keyboard.findKeyOnBoard(_wcsupr(&charCopy));
+			}
 		} break;
 
 		case WM_CLOSE:
