@@ -35,6 +35,7 @@ D2D1_RECT_F textLayoutRect;
 // NOTE: rectangles (areas)
 D2D1_ROUNDED_RECT textRect;
 D2D1_ROUNDED_RECT statsRect;
+D2D1_RECT_F shadeRect;
 
 // NOTE: Keyboard object
 Keyboard keyboard;
@@ -165,7 +166,6 @@ HRESULT onPaint(HWND windowHandle)
 	// NOTE: draw text area rectangle
 	brush->SetColor(colorWhite);
 	renderTarget->FillRoundedRectangle(&textRect, brush);
-    renderTarget->FillRoundedRectangle(&statsRect, brush);
 
 	// NOTE: drawing text cursor
 	drawCursor(windowHandle, textLayoutRect);
@@ -200,6 +200,18 @@ HRESULT onPaint(HWND windowHandle)
 	renderTarget->DrawTextLayout(D2D1::Point2F(textLayoutRect.left, textLayoutRect.top),
 	                             textLayout, brush);
 
+	// NOTE: drawing keyboard
+	keyboard.drawKeyboard(&brush, &renderTarget);
+
+	// NOTE: drawing shade rect prior to stats for highlighting
+	if(pauseMode)
+    {
+    	brush->SetColor(D2D1::ColorF(0x000000, 0.3f));
+		renderTarget->FillRectangle(&shadeRect, brush);
+    }
+    brush->SetColor(colorWhite);
+    renderTarget->FillRoundedRectangle(&statsRect, brush);
+
 	brush->SetColor(D2D1::ColorF(0xBCBCC2));
     renderTarget->DrawText(L"Скорость:", 9, statsTextFormat, rectAt(1055, 40, 100, 10), brush);
     renderTarget->DrawText(L"Точность:", 9, statsTextFormat, rectAt(1055, 170, 100, 10), brush);
@@ -209,9 +221,6 @@ HRESULT onPaint(HWND windowHandle)
 
     std::wstring accuracyStr = std::to_wstring(accuracy);
     renderTarget->DrawText(accuracyStr.c_str(), 5, statsTextFormat, rectAt(1055, 190, 100, 10), brush);
-
-	// NOTE: drawing keyboard
-	keyboard.drawKeyboard(&brush, &renderTarget);
 
 	renderTarget->EndDraw();
 
@@ -423,6 +432,8 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 		desiredRect.bottom - desiredRect.top, 
 		0, 0, instance, 0
 	);
+
+	shadeRect = rectAt(0, 0, 1280, 720);
 
 	// NOTE: drawing areas
 	textRect = roundedRectAt(110, 30, 900, 300, 10);
