@@ -25,6 +25,7 @@ ID2D1SolidColorBrush *whiteBrush;
 
 IDWriteFactory *writeFactory;
 IDWriteTextFormat *textFormat;
+IDWriteTextFormat *statsTextFormat;
 IDWriteTextFormat *keyboardTextFormat;
 
 // NOTE: text layout
@@ -46,6 +47,20 @@ UINT textLength;
 UINT bufferIndex = 0; // NOTE: current character index
 UINT previousBufferIndex = 0; // NOTE: last typed character index
 D2D1_RECT_F cursorRect = {0};
+
+// NOTE: time
+DWORD startTime = 0;
+DWORD finishTime = 0;
+DWORD resultTime = 0;
+
+UINT currentTypingSpeed;
+UINT onScreenSpeed;
+
+// NOTE: accuracy
+UINT typedChars = 0;
+UINT typos = 0;
+float accuracy = 100.0f;
+bool misprint = false;
 
 // NOTE: flags
 bool typingBegan = false;
@@ -84,6 +99,10 @@ HRESULT initGraphicsResources(HWND window)
 		result = writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
 		                               			DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
 		                               			21.0f, L"en-us", &textFormat);
+
+		result = writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
+		                                       DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 
+		                                       18.0f, L"en-us", &statsTextFormat);
 
 		result = writeFactory->CreateTextFormat(L"Open Sans", 0, DWRITE_FONT_WEIGHT_REGULAR, 
 		                                        DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 
@@ -181,6 +200,16 @@ HRESULT onPaint(HWND windowHandle)
 	renderTarget->DrawTextLayout(D2D1::Point2F(textLayoutRect.left, textLayoutRect.top),
 	                             textLayout, brush);
 
+	brush->SetColor(D2D1::ColorF(0xBCBCC2));
+    renderTarget->DrawText(L"Скорость:", 9, statsTextFormat, rectAt(1055, 40, 100, 10), brush);
+    renderTarget->DrawText(L"Точность:", 9, statsTextFormat, rectAt(1055, 170, 100, 10), brush);
+
+    std::wstring speedStr = std::to_wstring((UINT)onScreenSpeed);
+    renderTarget->DrawText(speedStr.c_str(), speedStr.length(), statsTextFormat, rectAt(1055, 60, 100, 10), brush);
+
+    std::wstring accuracyStr = std::to_wstring(accuracy);
+    renderTarget->DrawText(accuracyStr.c_str(), 5, statsTextFormat, rectAt(1055, 190, 100, 10), brush);
+
 	// NOTE: drawing keyboard
 	keyboard.drawKeyboard(&brush, &renderTarget);
 
@@ -217,12 +246,19 @@ void readRandomFile(UINT layout)
 void restart()
 {
 	bufferIndex = 0;
+	typedChars = 0;
 
 	WCHAR charCopy = textBuffer[bufferIndex];
 	keyboard.findKeyOnBoard(_wcsupr(&charCopy));
 
+	currentTypingSpeed = 0;
+	onScreenSpeed = 0;
+
 	pauseMode = false;
 	keyboard.borderVisible = true;
+
+	accuracy = 100.0f;
+	typos = 0;
 
 	cursorFillColor = cursorFillColorGreen;
 }
@@ -258,22 +294,53 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 				if(!typingBegan)
 				{
 					typingBegan = true;
+
+					startTime = timeGetTime();
 				}
 
+				misprint = false;
 				cursorFillColor = cursorFillColorGreen;
 
 				previousBufferIndex = bufferIndex;
 				++bufferIndex;
+				++typedChars;
 
 				WCHAR charCopy = textBuffer[bufferIndex];
 				keyboard.findKeyOnBoard(_wcsupr(&charCopy));
 
+				float timePassedInSeconds = (timeGetTime() - startTime) / 1000.0f;
+				currentTypingSpeed = (UINT)(typedChars / timePassedInSeconds * 60.0f);
+
+				if(bufferIndex % 5 == 0)
+				{
+					onScreenSpeed = currentTypingSpeed;
+				}
+
 				if(bufferIndex == textLength)
 				{
 					typingBegan = false;
+					finishTime = timeGetTime();
+					resultTime = finishTime - startTime;
+
+					onScreenSpeed = currentTypingSpeed;
 
 					keyboard.borderVisible = false;
 					pauseMode = true;
+				}
+			}
+			else
+			{
+				if(typingBegan)
+				{
+					cursorFillColor = cursorFillColorRed;
+
+					if(!misprint)
+					{
+						misprint = true;
+
+						++typos;
+						accuracy = 100.0f - ((float)typos / (float)textLength * 100.0f);
+					}
 				}
 			}
 

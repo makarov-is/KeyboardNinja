@@ -4,7 +4,7 @@ LINKER = link
 COMMON_FLAGS = -nologo
 COMPILER_FLAGS = /FC /Z7 /EHsc
 
-LIBS = user32.lib D2d1.lib Dwrite.lib
+LIBS = user32.lib D2d1.lib Dwrite.lib Winmm.lib
 
 BUID_DIR = build
 CODE_DIR = code
