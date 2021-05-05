@@ -33,7 +33,8 @@ bool checkFileSizeOK(UINT bytesRead, UINT outBufferSize)
 	return(result);
 }
 
-void readFile(const wchar_t *filename, WCHAR **outBuffer, UINT outBufferSize, UINT *bufferIndex)
+void readFile(const WCHAR *filename, WCHAR **outBuffer, UINT outBufferSize, 
+              UINT *textLength, UINT *bufferIndex)
 {
 	bool result = false;
 	HANDLE file = 0;
@@ -68,4 +69,14 @@ void readFile(const wchar_t *filename, WCHAR **outBuffer, UINT outBufferSize, UI
 
 	// NOTE: converting char to wchar
 	MultiByteToWideChar(CP_UTF8, 0, buffer, outBufferSize, *outBuffer, outBufferSize);
+
+	// NOTE: calculating number of characters
+	int wcharIndex = 0;
+	while(wcharIndex < outBufferSize)
+	{
+		WCHAR wchar = (*outBuffer)[wcharIndex];
+		if(wchar == '\0') break;
+		++wcharIndex;
+	}
+	*textLength = wcharIndex;
 }

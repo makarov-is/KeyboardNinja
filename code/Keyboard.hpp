@@ -9,22 +9,32 @@
 #define LAYOUT_RU 0x00000419
 #define LAYOUT_ENG 0x00000409
 
+struct key_pos
+{
+	int row;
+	int col;
+};
+
 class Keyboard
 {
 public:
 	Keyboard();
 	~Keyboard();
-	void Keyboard::init(IDWriteTextFormat **textFormat);
-	void Keyboard::drawKeyboard(ID2D1SolidColorBrush **brush, ID2D1HwndRenderTarget **renderTarget);
-	void drawKey(const wchar_t *keyStr, UINT keyStrLength, 
+	void init(IDWriteTextFormat **textFormat);
+	key_pos findKeyOnBoard(WCHAR *key);
+	void drawKeyboard(ID2D1SolidColorBrush **brush, ID2D1HwndRenderTarget **renderTarget);
+	void drawKey(const WCHAR *keyStr, UINT keyStrLength, 
 	             int x, int y, int width, int height, int radius, 
              	 D2D1_COLOR_F bgColor, D2D1_COLOR_F letterColor,
              	 ID2D1HwndRenderTarget **renderTarget);
-	void Keyboard::switchLayout();
-	void Keyboard::setRULayout();
+	void switchLayout();
+	void setRULayout();
 
 	ID2D1SolidColorBrush *keyboardBrush;
 	IDWriteTextFormat *keyboardTextFormat;
+
+	key_pos currentKeyPosition = {0};
+	bool borderVisible = true;
 
 	D2D1_COLOR_F keyboardPlateColor =           D2D1::ColorF(0x4CBEFA);
 	D2D1_COLOR_F keyboardPlateBorderUpColor =   D2D1::ColorF(0x79CEFB);
@@ -42,7 +52,7 @@ public:
 	D2D1_COLOR_F keyColorLetter = D2D1::ColorF(0x5B5461);
 	D2D1_COLOR_F keyColorLetterDim = D2D1::ColorF(0x999999);
 
-	wchar_t keyboardENG[4][12] = 
+	WCHAR keyboardENG[4][12] = 
 	{
 		{L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'-', L'='},
 		{L'Q', L'W', L'E', L'R', L'T', L'Y', L'U', L'I', L'O', L'P', L'[', L']'},
@@ -50,7 +60,7 @@ public:
 		{L'Z', L'X', L'C', L'V', L'B', L'N', L'M', L',', L'.', L'/', L' ', L' '}
 	};
 
-	wchar_t keyboardRU[4][12] = 
+	WCHAR keyboardRU[4][12] = 
 	{
 		{L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'-', L'='},
 		{L'É', L'Ö', L'Ó', L'Ê', L'Å', L'Í', L'Ã', L'Ø', L'Ù', L'Ç', L'Õ', L'Ú'},
@@ -71,7 +81,7 @@ public:
 		keyColorYellow, keyColorYellow, keyColorPink, keyColorCyan, keyColorGreen
 	};
 
-	wchar_t (*keyboard)[12];
+	WCHAR (*keyboard)[12];
 	UINT currentKeyboardLayout;
 };
 

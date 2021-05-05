@@ -10,6 +10,9 @@
 #include <d2d1.h>
 #include <dwrite.h>
 
+#include <locale.h>
+#include <string>
+
 #include "FileIO.hpp"
 #include "Shapes.hpp"
 #include "Keyboard.hpp"
@@ -30,6 +33,7 @@ D2D1_RECT_F textLayoutRect;
 
 // NOTE: rectangles (areas)
 D2D1_ROUNDED_RECT textRect;
+D2D1_ROUNDED_RECT statsRect;
 
 // NOTE: Keyboard object
 Keyboard keyboard;
@@ -37,6 +41,7 @@ Keyboard keyboard;
 // NOTE: text
 #define BUFFER_SIZE 2048
 WCHAR *textBuffer = 0;
+UINT textLength;
 
 UINT bufferIndex = 0; // NOTE: current character index
 UINT previousBufferIndex = 0; // NOTE: last typed character index
@@ -44,6 +49,7 @@ D2D1_RECT_F cursorRect = {0};
 
 // NOTE: flags
 bool typingBegan = false;
+bool pauseMode = false;
 
 // NOTE: colors
 D2D1_COLOR_F cursorFillColorGreen = D2D1::ColorF(0x5BC538);
@@ -66,14 +72,10 @@ HRESULT initGraphicsResources(HWND window)
 		D2D1_SIZE_U renderTargetSize = D2D1::SizeU(clientRect.right, clientRect.bottom);
 
 		result = factory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(),
-		                                         D2D1::HwndRenderTargetProperties(window, renderTargetSize), 
-		                                         &renderTarget);
+			D2D1::HwndRenderTargetProperties(window, renderTargetSize), &renderTarget);
 		if(SUCCEEDED(result))
 		{
-			D2D1_COLOR_F brushColor = D2D1::ColorF(0.0f, 0.0f, 0.0f);
-			result = renderTarget->CreateSolidColorBrush(brushColor, &brush);
-
-			textRect = D2D1::RoundedRect(D2D1::RectF(190.0f, 30.0f, 1090.0f, 330.0f), 10.0f, 10.0f);
+			result = renderTarget->CreateSolidColorBrush(colorBlack, &brush);
 		}
 	}
 
@@ -126,8 +128,8 @@ HRESULT onPaint(HWND windowHandle)
 
 	if(!textLayout)
 	{
-		textLayoutRect.left = 200;
-		textLayoutRect.right = 1080;
+		textLayoutRect.left = 120;
+		textLayoutRect.right = 1000;
 		textLayoutRect.top = 40;
 		textLayoutRect.bottom = 320;
 		writeFactory->CreateTextLayout(textBuffer, BUFFER_SIZE, textFormat,
@@ -144,6 +146,7 @@ HRESULT onPaint(HWND windowHandle)
 	// NOTE: draw text area rectangle
 	brush->SetColor(colorWhite);
 	renderTarget->FillRoundedRectangle(&textRect, brush);
+    renderTarget->FillRoundedRectangle(&statsRect, brush);
 
 	// NOTE: drawing text cursor
 	drawCursor(windowHandle, textLayoutRect);
@@ -186,9 +189,40 @@ HRESULT onPaint(HWND windowHandle)
 	return(hr);
 }
 
+void readRandomFile(UINT layout)
+{
+	WCHAR *filename = L"texts\\ru";
+#if 1
+	if(layout == LAYOUT_RU)
+	{
+		filename = L"texts\\ru";
+	}
+	else if(layout == LAYOUT_ENG)
+	{
+		filename = L"texts\\en";
+	}
+#endif
+
+	std::wstring name(filename);
+
+	WCHAR buffer[5];
+	int randNumber = rand() % 10;
+	WCHAR *txt = _itow(randNumber, buffer, 10);
+	name += std::wstring(txt);
+	name += std::wstring(L".txt");
+
+	readFile(name.c_str(), &textBuffer, BUFFER_SIZE, &textLength, &bufferIndex);
+}
+
 void restart()
 {
 	bufferIndex = 0;
+
+	WCHAR charCopy = textBuffer[bufferIndex];
+	keyboard.findKeyOnBoard(_wcsupr(&charCopy));
+
+	pauseMode = false;
+	keyboard.borderVisible = true;
 
 	cursorFillColor = cursorFillColorGreen;
 }
@@ -230,6 +264,17 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 
 				previousBufferIndex = bufferIndex;
 				++bufferIndex;
+
+				WCHAR charCopy = textBuffer[bufferIndex];
+				keyboard.findKeyOnBoard(_wcsupr(&charCopy));
+
+				if(bufferIndex == textLength)
+				{
+					typingBegan = false;
+
+					keyboard.borderVisible = false;
+					pauseMode = true;
+				}
 			}
 
 		} break;
@@ -240,27 +285,29 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 			UINT vkCode = (UINT)wParam;
 			bool isDown = ((lParam & (1 << 31)) == 0);
 
+			if(pauseMode)
+			{
+				if(vkCode == VK_RETURN && isDown)
+				{
+					discardTextLayout(&textLayout);
+					readRandomFile(keyboard.currentKeyboardLayout);
+
+					restart();
+				}
+
+				if(vkCode == VK_SPACE && isDown)
+				{
+					restart();
+				}
+			}
+
 			if(vkCode == VK_F1 && isDown)
 			{
 				keyboard.switchLayout();
 
 				discardTextLayout(&textLayout);
-
-				readFile(L"texts\\en.txt", &textBuffer, BUFFER_SIZE, &bufferIndex);
-
+				readRandomFile(keyboard.currentKeyboardLayout);
 				restart();
-			}
-		} break;
-
-		case WM_SIZE:
-		{
-			if(renderTarget)
-			{
-				RECT clientRect;
-				GetClientRect(windowHandle, &clientRect);
-				D2D1_SIZE_U clientRectSize = D2D1::SizeU(clientRect.right, clientRect.bottom);
-				renderTarget->Resize(clientRectSize);
-				InvalidateRect(windowHandle, 0, false);
 			}
 		} break;
 
@@ -285,6 +332,9 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 
 int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showCmd)
 {
+	// NOTE: for _wcsupr() function
+	setlocale(LC_ALL, "Russian");
+
 	WCHAR *windowClassName = L"KNWindow";
 
 	WNDCLASS windowClass = {};
@@ -297,24 +347,29 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	RECT desiredRect = {0};
 	desiredRect.right = 1280;
 	desiredRect.bottom = 720;
-	AdjustWindowRect(&desiredRect, WS_OVERLAPPEDWINDOW, false);
+	AdjustWindowRect(&desiredRect, WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU, false);
 
 	HWND window = CreateWindow(
-		windowClassName, L"KeyboardNinja", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 
+		windowClassName, L"KeyboardNinja", WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU, 
+		CW_USEDEFAULT, CW_USEDEFAULT, 
 		desiredRect.right - desiredRect.left, 
 		desiredRect.bottom - desiredRect.top, 
 		0, 0, instance, 0
 	);
+
+	// NOTE: drawing areas
+	textRect = roundedRectAt(110, 30, 900, 300, 10);
+	statsRect = roundedRectAt(110 + 900 + 10, 30, 140, 300, 10);
 
 	//NOTE: initialize textBuffer
 	textBuffer = (WCHAR *)calloc(BUFFER_SIZE, sizeof(WCHAR));
 
 	// NOTE: loading text file
 	WCHAR *filename = L"texts\\ru.txt";
-	readFile(filename, &textBuffer, BUFFER_SIZE, &bufferIndex);
+	readFile(filename, &textBuffer, BUFFER_SIZE, &textLength, &bufferIndex);
 
-	// NOTE: drawing areas
-	textRect = roundedRectAt(190, 30, 900, 300, 10);
+	// NOTE: initialize all variables
+	restart();
 
 	// NOTE: show window on screen
 	ShowWindow(window, showCmd);
