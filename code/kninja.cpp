@@ -48,7 +48,7 @@ UINT textLength;
 
 UINT bufferIndex = 0; // NOTE: current character index
 UINT previousBufferIndex = 0; // NOTE: last typed character index
-D2D1_RECT_F cursorRect = {0};
+D2D1_RECT_F cursorRect = {0}; // NOTE: text cursor
 
 // NOTE: time
 DWORD startTime = 0;
@@ -471,6 +471,7 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	windowClass.lpfnWndProc = KNWindowProc;
 	windowClass.hInstance = instance;
 	windowClass.lpszClassName = windowClassName;
+	windowClass.hCursor = LoadCursor(0, IDC_ARROW);
 
 	RegisterClass(&windowClass);
 
