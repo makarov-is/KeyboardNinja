@@ -418,6 +418,17 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 				restart();
 			}
 
+			if(vkCode == VK_F2 && isDown)
+			{
+				keyboard.setRULayout();
+
+				discardTextLayout(&textLayout);
+
+				readFile(L"texts\\ru.txt", &textBuffer, BUFFER_SIZE, &textLength, &bufferIndex);
+
+				restart();
+			}
+
 			if(vkCode == VK_F5 && isDown)
 			{
 				previousBufferIndex = bufferIndex;
