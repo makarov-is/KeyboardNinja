@@ -234,6 +234,16 @@ HRESULT onPaint(HWND windowHandle)
     std::wstring accuracyStr = std::to_wstring(accuracy);
     renderTarget->DrawText(accuracyStr.c_str(), 5, statsTextFormat, rectAt(1055, 190, 100, 10), brush);
 
+    if(pauseMode)
+    {
+    	brush->SetColor(D2D1::ColorF(0xBCBCC2));
+		renderTarget->DrawText(L"Space:", 6, statsTextFormat, rectAt(1030, 240, 200, 10), brush);
+		renderTarget->DrawText(L"начать заново", 15, statsTextFormat, rectAt(1030, 255, 200, 10), brush);
+
+    	renderTarget->DrawText(L"Enter:", 6, statsTextFormat, rectAt(1030, 280, 200, 10), brush);
+    	renderTarget->DrawText(L"продолжить", 12, statsTextFormat, rectAt(1030, 295, 200, 10), brush);
+    }
+
     // NOTE: Drawing bitmap
 	renderTarget->DrawBitmap(speedometerIcon.bitmap, speedometerIcon.bitmapRect);
 	renderTarget->DrawBitmap(accuracyIcon.bitmap, accuracyIcon.bitmapRect);
