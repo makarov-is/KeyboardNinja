@@ -16,6 +16,7 @@
 #include "FileIO.hpp"
 #include "Shapes.hpp"
 #include "Keyboard.hpp"
+#include "Image.hpp"
 
 ID2D1Factory *factory;
 ID2D1HwndRenderTarget *renderTarget;
@@ -75,6 +76,11 @@ D2D1_COLOR_F colorBlack = D2D1::ColorF(0x000000);
 D2D1_COLOR_F colorWhite = D2D1::ColorF(0xFFFFFF);
 D2D1_COLOR_F backgroundColor = D2D1::ColorF(0x55C5FF);
 
+// NOTE: images
+IWICImagingFactory *imagingFactory;
+Image speedometerIcon;
+Image accuracyIcon;
+
 //===============================================================
 
 HRESULT initGraphicsResources(HWND window)
@@ -109,6 +115,12 @@ HRESULT initGraphicsResources(HWND window)
 		                                        DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 
 		                                        18.0f, L"en-us", &keyboardTextFormat);
 	}
+
+	// NOTE: Creating bitmaps
+	speedometerIcon.setRect(1030, 43, 20, 20);
+	accuracyIcon.setRect(1025, 168, 25, 25);
+	result = speedometerIcon.createBitmap(L"images\\speedometer.png", &renderTarget, &imagingFactory);
+	result = accuracyIcon.createBitmap(L"images\\accuracy.png", &renderTarget, &imagingFactory);
 
 	keyboard.init(&keyboardTextFormat);
 
@@ -222,6 +234,10 @@ HRESULT onPaint(HWND windowHandle)
     std::wstring accuracyStr = std::to_wstring(accuracy);
     renderTarget->DrawText(accuracyStr.c_str(), 5, statsTextFormat, rectAt(1055, 190, 100, 10), brush);
 
+    // NOTE: Drawing bitmap
+	renderTarget->DrawBitmap(speedometerIcon.bitmap, speedometerIcon.bitmapRect);
+	renderTarget->DrawBitmap(accuracyIcon.bitmap, accuracyIcon.bitmapRect);
+
 	renderTarget->EndDraw();
 
 	return(hr);
@@ -281,6 +297,12 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 	{
 		case WM_CREATE:
 		{
+			// NOTE: ImagingFactory
+			hr = CoInitialize(0);
+			hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, 
+                   				  __uuidof(IWICImagingFactory), (void **)(&imagingFactory));
+
+			// NOTE: WriteFactory
 			hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &factory);
 			hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), (IUnknown **)&writeFactory);
 

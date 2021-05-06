@@ -4,7 +4,7 @@ LINKER = link
 COMMON_FLAGS = -nologo
 COMPILER_FLAGS = /FC /Z7 /EHsc
 
-LIBS = user32.lib D2d1.lib Dwrite.lib Winmm.lib
+LIBS = user32.lib D2d1.lib Dwrite.lib Winmm.lib Ole32.lib 
 
 BUID_DIR = build
 CODE_DIR = code
@@ -21,7 +21,7 @@ run:
 main: setup_dirs kninja
 	cd $(BUID_DIR)
 	$(LINKER) $(COMMON_FLAGS) /DEBUG \
-	KNinja.obj FileIO.obj ErrorMessage.obj Shapes.obj Keyboard.obj $(LIBS) \
+	KNinja.obj FileIO.obj ErrorMessage.obj Shapes.obj Keyboard.obj Image.obj $(LIBS) \
 	/Fe:KNinja.exe
 
 kninja: setup_dirs $(CODE_DIR)/KNinja.cpp
@@ -39,13 +39,16 @@ shapes: setup_dirs $(CODE_DIR)/Shapes.cpp
 keyboard: setup_dirs $(CODE_DIR)/Keyboard.cpp
 	$(COMPILER) $(COMMON_FLAGS) $(COMPILER_FLAGS) -c $(CODE_DIR)/Keyboard.cpp /Fo:$(BUID_DIR)/Keyboard.obj
 
-modules: fileio error shapes keyboard
+image: setup_dirs $(CODE_DIR)/Image.cpp
+	$(COMPILER) $(COMMON_FLAGS) $(COMPILER_FLAGS) -c $(CODE_DIR)/Image.cpp /Fo:$(BUID_DIR)/Image.obj
+
+modules: fileio error shapes keyboard image
 
 
-tests: setup_dirs tests.obj fileio error shapes keyboard
+tests: setup_dirs tests.obj fileio error shapes keyboard image
 	cd $(BUID_DIR)
 	$(LINKER) $(COMMON_FLAGS) /DEBUG \
-	Tests.obj FileIO.obj ErrorMessage.obj Shapes.obj Keyboard.obj \
+	Tests.obj FileIO.obj ErrorMessage.obj Shapes.obj Keyboard.obj Image.obj \
 	/Fe:Tests.exe
 
 tests.obj: setup_dirs $(CODE_DIR)/Tests.cpp
