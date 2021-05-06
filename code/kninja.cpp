@@ -48,7 +48,7 @@ UINT textLength;
 
 UINT bufferIndex = 0; // NOTE: current character index
 UINT previousBufferIndex = 0; // NOTE: last typed character index
-D2D1_RECT_F cursorRect = {0};
+D2D1_RECT_F cursorRect = {0}; // NOTE: text cursor
 
 // NOTE: time
 DWORD startTime = 0;
@@ -234,6 +234,16 @@ HRESULT onPaint(HWND windowHandle)
     std::wstring accuracyStr = std::to_wstring(accuracy);
     renderTarget->DrawText(accuracyStr.c_str(), 5, statsTextFormat, rectAt(1055, 190, 100, 10), brush);
 
+    if(pauseMode)
+    {
+    	brush->SetColor(D2D1::ColorF(0xBCBCC2));
+		renderTarget->DrawText(L"Space:", 6, statsTextFormat, rectAt(1030, 240, 200, 10), brush);
+		renderTarget->DrawText(L"начать заново", 15, statsTextFormat, rectAt(1030, 255, 200, 10), brush);
+
+    	renderTarget->DrawText(L"Enter:", 6, statsTextFormat, rectAt(1030, 280, 200, 10), brush);
+    	renderTarget->DrawText(L"продолжить", 12, statsTextFormat, rectAt(1030, 295, 200, 10), brush);
+    }
+
     // NOTE: Drawing bitmap
 	renderTarget->DrawBitmap(speedometerIcon.bitmap, speedometerIcon.bitmapRect);
 	renderTarget->DrawBitmap(accuracyIcon.bitmap, accuracyIcon.bitmapRect);
@@ -408,6 +418,17 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 				restart();
 			}
 
+			if(vkCode == VK_F2 && isDown)
+			{
+				keyboard.setRULayout();
+
+				discardTextLayout(&textLayout);
+
+				readFile(L"texts\\ru.txt", &textBuffer, BUFFER_SIZE, &textLength, &bufferIndex);
+
+				restart();
+			}
+
 			if(vkCode == VK_F5 && isDown)
 			{
 				previousBufferIndex = bufferIndex;
@@ -450,6 +471,7 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	windowClass.lpfnWndProc = KNWindowProc;
 	windowClass.hInstance = instance;
 	windowClass.lpszClassName = windowClassName;
+	windowClass.hCursor = LoadCursor(0, IDC_ARROW);
 
 	RegisterClass(&windowClass);
 
