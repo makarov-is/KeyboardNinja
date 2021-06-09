@@ -1,4 +1,4 @@
 @echo off
-pushd data
-..\build\KNinja.exe
+pushd
+build\KNinja.exe
 popd

@@ -119,8 +119,8 @@ HRESULT initGraphicsResources(HWND window)
 	// NOTE: Creating bitmaps
 	speedometerIcon.setRect(1030, 43, 20, 20);
 	accuracyIcon.setRect(1025, 168, 25, 25);
-	result = speedometerIcon.createBitmap(L"images\\speedometer.png", &renderTarget, &imagingFactory);
-	result = accuracyIcon.createBitmap(L"images\\accuracy.png", &renderTarget, &imagingFactory);
+	result = speedometerIcon.createBitmap(L"data\\images\\speedometer.png", &renderTarget, &imagingFactory);
+	result = accuracyIcon.createBitmap(L"data\\images\\accuracy.png", &renderTarget, &imagingFactory);
 
 	keyboard.init(&keyboardTextFormat);
 
@@ -255,15 +255,15 @@ HRESULT onPaint(HWND windowHandle)
 
 void readRandomFile(UINT layout)
 {
-	WCHAR *filename = L"texts\\ru";
+	WCHAR *filename = L"data\\texts\\ru";
 #if 1
 	if(layout == LAYOUT_RU)
 	{
-		filename = L"texts\\ru";
+		filename = L"data\\texts\\ru";
 	}
 	else if(layout == LAYOUT_ENG)
 	{
-		filename = L"texts\\en";
+		filename = L"data\\texts\\en";
 	}
 #endif
 
@@ -424,7 +424,7 @@ LRESULT CALLBACK KNWindowProc(HWND windowHandle, UINT message, WPARAM wParam, LP
 
 				discardTextLayout(&textLayout);
 
-				readFile(L"texts\\ru.txt", &textBuffer, BUFFER_SIZE, &textLength, &bufferIndex);
+				readFile(L"data\\texts\\ru.txt", &textBuffer, BUFFER_SIZE, &textLength, &bufferIndex);
 
 				restart();
 			}
@@ -498,7 +498,7 @@ int WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR cmdLine, int showC
 	textBuffer = (WCHAR *)calloc(BUFFER_SIZE, sizeof(WCHAR));
 
 	// NOTE: loading text file
-	WCHAR *filename = L"texts\\ru.txt";
+	WCHAR *filename = L"data\\texts\\ru.txt";
 	readFile(filename, &textBuffer, BUFFER_SIZE, &textLength, &bufferIndex);
 
 	// NOTE: initialize all variables
